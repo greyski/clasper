@@ -5,7 +5,7 @@ A simple wrapper around [Ghostty](https://ghostty.org) and
 in a new Claude session, running in bypass permissions mode.
 
 - **A session per window.** Cmd-N starts another.
-- **A color per window.** Each one gets its own tint, in light or dark.
+- **A color per window.** Each one gets its own tint (with light/dark theme support).
 - **Cmd-R restarts Claude.** Picks up updates and keeps your conversation.
 - **Guided setup.** Claude sets up Chrome and your Mac permissions with you.
 - **Plain-language rules.** Claude checks before deleting, sending or sharing
