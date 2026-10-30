@@ -1,0 +1,299 @@
+#!/usr/bin/env python3
+"""Move running Claude sessions from Terminal.app into Ghostty windows.
+
+For each Claude session running in a Terminal.app tab that is idle: stop it,
+close its tab, and reopen the same conversation (claude --resume) in a new
+Ghostty window running the clasper session script. Busy sessions are skipped
+so no work in progress is interrupted -- rerun once they finish.
+
+    clasper-migrate              migrate every idle Terminal session
+    clasper-migrate --dry-run    just list what would move
+    clasper-migrate --when-idle  run in the background, wait for the Claude
+                                session this was started from (the nearest
+                                `claude` up the process tree) to go idle, then
+                                move just that one. Used by install.sh so the
+                                conversation that ran the installer carries on
+                                in Ghostty. Log: ~/.cache/clasper/migrate.log
+"""
+import json
+import os
+import shlex
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+SUITE = Path(__file__).resolve().parent.parent
+SESSION_CMD = SUITE / "bin" / "clasper-session"
+SUITE_CONFIG = SUITE / "build" / "ghostty.config"
+REGISTRY = Path.home() / ".claude" / "sessions"
+CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "clasper"
+LOG = CACHE / "migrate.log"
+HANDOFF_DIR = CACHE / "handoff"
+IDLE_FOR = 4          # seconds the session must stay idle before we move it
+WAIT_LIMIT = 30 * 60  # give up after this long
+
+# Nothing launched from here should look like it runs inside a Claude session
+# (CLAUDE_CODE_CHILD_SESSION, for one, turns off transcript saving).
+CLEAN_ENV = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
+
+
+def find_ghostty():
+    for d in ("/Applications", Path.home() / "Applications"):
+        app = Path(d) / "Ghostty.app"
+        if app.exists():
+            return app
+    sys.exit("Ghostty.app not found in /Applications or ~/Applications; run install.sh first.")
+
+
+def osascript(script, lang="AppleScript", *args):
+    return subprocess.run(["osascript", "-l", lang, "-e", script, *args],
+                          capture_output=True, text=True, env=CLEAN_ENV).stdout.strip()
+
+
+def terminal_ttys():
+    out = osascript('''
+set out to ""
+tell application "Terminal"
+  repeat with w in windows
+    repeat with t in tabs of w
+      set out to out & (tty of t) & linefeed
+    end repeat
+  end repeat
+end tell
+return out''') if osascript('application "Terminal" is running') == "true" else ""
+    return {line.strip() for line in out.splitlines() if line.strip()}
+
+
+def alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+
+
+def tty_of(pid):
+    tty = subprocess.run(["ps", "-o", "tty=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
+    return f"/dev/{tty}" if tty and tty != "??" else None
+
+
+def read_session(pid):
+    try:
+        return json.loads((REGISTRY / f"{pid}.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def sessions():
+    ttys = terminal_ttys()
+    for f in sorted(REGISTRY.glob("*.json")):
+        try:
+            d = json.loads(f.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        pid = d.get("pid")
+        if not pid or d.get("kind") != "interactive" or not alive(pid):
+            continue
+        tty = tty_of(pid)
+        if tty in ttys:
+            yield d, tty
+
+
+def close_terminal_tab(tty):
+    # Close the window if this is its only tab; otherwise exit the shell left
+    # behind (e.g. after `claude` exits) and leave the tab to the profile's setting.
+    osascript(f'''
+tell application "Terminal"
+  repeat with w in windows
+    repeat with t in tabs of w
+      if tty of t is "{tty}" then
+        if (count of tabs of w) is 1 then
+          close w saving no
+        else
+          do script "exit" in t
+        end if
+        return
+      end if
+    end repeat
+  end repeat
+end tell''')
+
+
+# Ask one running Ghostty process (by pid, since several can run at once) for a
+# new window: the suite's session script, with the conversation to resume in
+# its environment. Uses Ghostty's AppleScript "new window with configuration".
+NEW_WINDOW_JXA = r'''
+ObjC.import('Foundation'); ObjC.import('AppKit');
+function cc(s){var n=0;for(var i=0;i<4;i++)n=n*256+s.charCodeAt(i);return n;}
+function str(s){return $.NSAppleEventDescriptor.descriptorWithString(s);}
+function run(argv){
+  var pid=parseInt(argv[0]);
+  var ev=$.NSAppleEventDescriptor.appleEventWithEventClassEventIDTargetDescriptorReturnIDTransactionID(
+    cc('Ghst'),cc('NWin'),$.NSAppleEventDescriptor.descriptorWithProcessIdentifier(pid),-1,0);
+  var rec=$.NSAppleEventDescriptor.recordDescriptor, envs=$.NSAppleEventDescriptor.listDescriptor;
+  for(var i=3;i<argv.length;i++) envs.insertDescriptorAtIndex(str(argv[i]),0);
+  rec.setDescriptorForKeyword(str(argv[1]),cc('GScC'));
+  rec.setDescriptorForKeyword(str(argv[2]),cc('GScD'));
+  rec.setDescriptorForKeyword(envs,cc('GScE'));
+  ev.setParamDescriptorForKeyword(rec,cc('GNwS'));
+  var err=Ref(), r=ev.sendEventWithOptionsTimeoutError(3,15,err);
+  if(!r||r.isNil()) return 'failed';
+  var e=r.paramDescriptorForKeyword(cc('errn'));
+  if(e&&!e.isNil()&&e.int32Value!==0) return 'error '+e.int32Value;
+  var app=$.NSRunningApplication.runningApplicationWithProcessIdentifier(pid);
+  if(app&&!app.isNil()) app.activateWithOptions(3);
+  return 'ok';
+}'''
+
+
+def running_ghostty(app):
+    exe = str(app / "Contents" / "MacOS" / "ghostty")
+    out = subprocess.run(["ps", "-axo", "pid=,lstart=,command="], capture_output=True, text=True).stdout
+    pids = []
+    for line in out.splitlines():
+        parts = line.split(None, 6)
+        if len(parts) == 7 and (parts[6] == exe or parts[6].startswith(exe + " ")):
+            pids.append(int(parts[0]))
+    return max(pids) if pids else None   # newest-ish: highest pid
+
+
+def default_config_is_suite():
+    d = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "ghostty"
+    for name in ("config.ghostty", "config"):
+        try:
+            if str(SUITE_CONFIG) in (d / name).read_text():
+                return True
+        except OSError:
+            pass
+    return False
+
+
+def write_handoff(sid, cwd):
+    """A one-shot file telling the next clasper-session which conversation to
+    resume and where. The first window to start claims (deletes) it, so later
+    Cmd-N windows in the same Ghostty start fresh even though they inherit
+    the process environment."""
+    HANDOFF_DIR.mkdir(parents=True, exist_ok=True)
+    fd, path = tempfile.mkstemp(dir=HANDOFF_DIR, prefix="handoff-")  # mode 600
+    with os.fdopen(fd, "w") as f:
+        f.write(f"{sid}\n{cwd}\n")
+    return path
+
+
+def open_window(sid, cwd):
+    """New Ghostty window running clasper-session, resuming conversation `sid` in `cwd`."""
+    env = {"CLASPER_HANDOFF": write_handoff(sid, cwd)}
+    app = find_ghostty()
+    pid = running_ghostty(app)
+    if pid:
+        res = osascript(NEW_WINDOW_JXA, "JavaScript", str(pid), shlex.quote(str(SESSION_CMD)),
+                        cwd if os.path.isdir(cwd) else str(Path.home()), *[f"{k}={v}" for k, v in env.items()])
+        if res == "ok":
+            return
+        print(f"  couldn't add a window to the running Ghostty ({res or 'no answer'}); starting another copy")
+    # Not running (or Apple Events refused): start a Ghostty process. Its
+    # command/working-directory come from config, so the handoff file travels
+    # as an env var that clasper-session reads.
+    cmd = ["open", "-na", str(app)]
+    for k, v in env.items():
+        cmd += ["--env", f"{k}={v}"]
+    if not default_config_is_suite():
+        cmd += ["--args", f"--config-file={SUITE_CONFIG}"]
+    subprocess.run(cmd, check=True, env=CLEAN_ENV)
+
+
+def migrate(d, tty):
+    pid, sid, cwd = d["pid"], d["sessionId"], d["cwd"]
+    # Stop the old process first so two clients never write the same transcript.
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(50):
+        if not alive(pid):
+            break
+        time.sleep(0.1)
+    else:
+        print(f"  pid {pid} did not exit; leaving it alone")
+        return False
+    close_terminal_tab(tty)
+    open_window(sid, cwd)
+    return True
+
+
+def nearest_claude():
+    """The nearest ancestor process that is a registered interactive Claude session."""
+    pid = os.getppid()
+    while pid > 1:
+        d = read_session(pid)
+        if d and d.get("kind") == "interactive":
+            return pid
+        out = subprocess.run(["ps", "-o", "ppid=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
+        pid = int(out) if out else 0
+    return None
+
+
+def when_idle():
+    pid = nearest_claude()
+    if not pid:
+        sys.exit("Not started from inside a Claude session; nothing to wait for.")
+    tty = tty_of(pid)
+    if tty not in terminal_ttys():
+        sys.exit("That Claude session isn't running in Terminal.app; nothing to move.")
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG, "a") as log:
+        # A new session (setsid) so the watcher outlives the Bash tool call and
+        # the Terminal tab that started it; output goes to the log.
+        subprocess.Popen([sys.executable, __file__, "--watch", str(pid)], stdin=subprocess.DEVNULL,
+                         stdout=log, stderr=log, start_new_session=True, env=CLEAN_ENV, cwd="/")
+    print(f"When this Claude session (pid {pid}) is idle, it will move into a Ghostty window.")
+
+
+def watch(pid):
+    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+    print(time.strftime("%F %T"), f"watching pid {pid}", flush=True)
+    deadline, idle_since = time.time() + WAIT_LIMIT, None
+    while time.time() < deadline:
+        d = read_session(pid)
+        if not d or not alive(pid):
+            print(time.strftime("%F %T"), "session ended; nothing to move", flush=True)
+            return
+        if d.get("status") == "idle":
+            idle_since = idle_since or time.time()
+            if time.time() - idle_since >= IDLE_FOR:
+                tty = tty_of(pid)
+                if tty not in terminal_ttys():
+                    print(time.strftime("%F %T"), "no longer in a Terminal tab; leaving it", flush=True)
+                    return
+                print(time.strftime("%F %T"), f"moving session {d['sessionId']}", flush=True)
+                migrate(d, tty)
+                return
+        else:
+            idle_since = None
+        time.sleep(1)
+    print(time.strftime("%F %T"), "gave up waiting for the session to go idle", flush=True)
+
+
+def main():
+    if "--watch" in sys.argv:
+        return watch(int(sys.argv[sys.argv.index("--watch") + 1]))
+    if "--when-idle" in sys.argv:
+        return when_idle()
+    dry = "--dry-run" in sys.argv
+    found = list(sessions())
+    if not found:
+        print("No Claude sessions running in Terminal.app.")
+        return
+    for d, tty in found:
+        label = f"{d.get('name', d['sessionId'][:8])}  {d['cwd']}  ({tty.removeprefix('/dev/')})"
+        if d.get("status") != "idle":
+            print(f"skip  {label}: busy ({d.get('status')}), rerun when it's done")
+        elif dry:
+            print(f"would move  {label}")
+        else:
+            print(f"moving  {label}")
+            migrate(d, tty)
+
+
+if __name__ == "__main__":
+    main()
