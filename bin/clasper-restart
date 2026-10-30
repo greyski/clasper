@@ -1,8 +1,8 @@
 #!/bin/zsh
 # Restart the Claude session in this Clasper window, keeping the conversation.
 #
-# Ghostty's Cmd-R types `!clasper-restart` into Claude, which runs this as a
-# shell command from inside the session. It leaves a note for the window's
+# Cmd-R is a Claude keybinding for the /clasper-restart command, which runs this
+# as a shell command from inside the session. It leaves a note for the window's
 # clasper-session (which started Claude and is waiting for it to exit) saying
 # which conversation to reopen and where, then stops Claude. clasper-session
 # then starts itself again from the top, so changes to the session script,

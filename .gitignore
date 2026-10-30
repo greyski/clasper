@@ -3,7 +3,6 @@ local/
 build/
 # local-only working folders
 ghostty/
-launcher/
 .DS_Store
 __pycache__/
 # local-only symlink

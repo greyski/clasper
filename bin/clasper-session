@@ -1,7 +1,7 @@
 #!/bin/zsh -l
 # clasper-session: one Claude session per Ghostty window. Ghostty runs this as
 # its `command` (see templates/ghostty.config.in); it tints the window, then
-# execs Claude in bypass mode. Settings come from local/settings.env, and any
+# runs Claude in bypass mode. Settings come from local/settings.env, and any
 # extra arguments are passed through to claude.
 #
 # Claude's *-ansi themes draw their UI from the terminal palette, so recoloring
@@ -105,6 +105,7 @@ restart=${XDG_CACHE_HOME:-$HOME/.cache}/clasper/restart/$$
 if [[ -f $restart ]]; then
   export CLASPER_HANDOFF=$restart.handoff CLASPER_TINT=$name
   mv $restart $CLASPER_HANDOFF
-  exec $0 "$@"
+  # No "$@": a --resume from the first launch would override the handoff.
+  exec $0
 fi
 exit $code

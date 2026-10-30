@@ -26,6 +26,8 @@ What you get:
 - **Plain-language rules.** Claude asks before deleting, sending or sharing
   anything, never buys anything, computes (never guesses) dates, sums and random
   picks, and keeps your work in `~/claude/` with notes for each project.
+- **Cmd-R restarts Claude.** Picks up any updates and reopens the same
+  conversation in the same window.
 - **`clasper-migrate`.** Moves Claude sessions already running in Terminal.app
   into Ghostty windows, reopening the same conversations.
 
