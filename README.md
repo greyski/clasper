@@ -1,7 +1,7 @@
 # Clasper
 
 A small macOS setup that gives a non-technical person Claude Code with one
-click. Click Ghostty in the Dock and a window opens with Claude already running
+click. Open Ghostty and a window opens with Claude already running
 in bypass permissions mode, so it just does things: files, installs, web
 errands in your own Chrome, and native Mac apps. Claude walks you through a
 short setup the first time, and the rules it follows are written for people
@@ -9,9 +9,9 @@ who don't want to see a command line.
 
 What you get:
 
-- **One click from the Dock.** Ghostty is pinned to the Dock with a white ghost
-  icon (a nod to Claude's mascot and to Ghostty). Every window is a Claude
-  session.
+- **One click to start.** Ghostty gets a white ghost icon (a nod to Claude's
+  mascot and to Ghostty), and every window is a Claude session. Keep it in your
+  Dock if you like: right-click its icon and choose **Options > Keep in Dock**.
 - **Bypass permissions mode.** Claude runs commands and installs what it needs
   without stopping to ask.
 - **A color per window.** Each window gets its own tint, and Claude's mascot,
@@ -57,7 +57,7 @@ Code, and controlling Mac apps (computer use) needs Pro or Max.
    conversation into a new Ghostty window. It then asks you a few questions
    (your name, colors, Chrome) and walks you through the Mac permissions.
    If your Mac asks whether to open Ghostty, click **Open**. From then on,
-   click **Ghostty in your Dock** to start, and type `/resume` to reopen an
+   open **Ghostty** to start, and type `/resume` to reopen an
    earlier conversation.
 
 Later, say **"update Clasper"** or **"uninstall Clasper"** and Claude
@@ -78,7 +78,7 @@ shell work, or don't install this. Ghostty itself keeps updating normally.
 
 (or tell Claude "uninstall Clasper").
 
-This removes the Dock icon, the Ghostty include line and the links in
+This removes the Ghostty include line and the links in
 `~/.claude/`. Your `local/` folder and `~/claude/` are left alone; delete them
 yourself if you want them gone.
 

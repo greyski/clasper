@@ -142,7 +142,7 @@ Then:
   menu, not a shell command, so it has to be them.) It needs a Claude Pro or
   Max plan; if it isn't in the list, say so plainly and move on.
 - Mac only applies Full Disk Access and Screen Recording after Ghostty restarts.
-  Tell them: "To finish, quit Ghostty (⌘Q) and click **Ghostty in your Dock**
+  Tell them: "To finish, quit Ghostty (⌘Q) and open **Ghostty**
   again. Everything's saved." Don't quit it for them.
 - If they'd rather not restart now, run `clasper.sh fda` later to see whether it
   took effect.

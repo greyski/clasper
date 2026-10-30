@@ -1,9 +1,8 @@
 #!/bin/bash
 # Clasper installer: Claude Code in bypass-permissions mode, one session per
-# Ghostty window, started from the Ghostty icon in the Dock.
+# Ghostty window.
 #
 #   ./install.sh               install, or update after pulling changes (safe to re-run)
-#   ./install.sh --no-dock     same, but don't pin Ghostty to the Dock
 #   ./install.sh --uninstall   take the suite back out (Ghostty, uv and Claude
 #                              Code themselves stay installed)
 #
@@ -19,7 +18,6 @@ SUITE_CONFIG="$BUILD/ghostty.config"
 GHOSTTY_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
 MARK_BEGIN="# >>> clasper >>> (added by install.sh; ./install.sh --uninstall removes it)"
 MARK_END="# <<< clasper <<<"
-DOCK_MARKER="$LOCAL/.ghostty-pinned-by-installer"
 BACKUPS="$HOME/.claude/backups/clasper-$(date +%Y%m%d-%H%M%S)"
 SETUP_URL="https://code.claude.com/docs/en/setup"
 GHOSTTY_TEAM="24VZTF6M5V"   # Mitchell Hashimoto's Apple Developer ID
@@ -27,13 +25,11 @@ GHOSTTY_FALLBACK_DMG="https://release.files.ghostty.org/1.4.0/Ghostty.dmg"
 # Where Ghostty may live. If set, CLASPER_APPS_DIR replaces this list.
 if [ -n "${CLASPER_APPS_DIR:-}" ]; then APP_DIRS="$CLASPER_APPS_DIR"; else APP_DIRS="/Applications $HOME/Applications"; fi
 
-DOCK=1
 UNINSTALL=0
 for arg in "$@"; do
   case "$arg" in
-    --no-dock) DOCK=0 ;;
     --uninstall) UNINSTALL=1 ;;
-    -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $arg (try --help)" >&2; exit 2 ;;
   esac
 done
@@ -123,14 +119,6 @@ if [ "$UNINSTALL" = 1 ]; then
   else
     ok "nothing of ours in Ghostty's settings"
   fi
-
-  step "Dock"
-  if [ -f "$DOCK_MARKER" ] && APP="$(find_ghostty_app)"; then
-    py "$REPO/lib/dock.py" remove "$APP" | sed 's/^/  /'
-  else
-    ok "leaving the Dock alone (the suite didn't pin anything)"
-  fi
-  rm -f "$DOCK_MARKER"
 
   step "Claude Code settings"
   py "$REPO/lib/configure_claude.py" --repo "$REPO" --backup-dir "$BACKUPS" --uninstall
@@ -286,17 +274,6 @@ if ! out="$("$GHOSTTY" +validate-config 2>&1)"; then
   note "Ghostty reports a problem in its combined settings:"; printf '%s\n' "$out" | sed 's/^/      /'
 fi
 
-step "Dock"
-if [ "$DOCK" = 0 ]; then
-  ok "skipped (--no-dock)"
-elif py "$REPO/lib/dock.py" has "$APP"; then
-  ok "Ghostty is already in the Dock"
-else
-  py "$REPO/lib/dock.py" add "$APP" >/dev/null
-  touch "$DOCK_MARKER"
-  ok "added Ghostty to the Dock"
-fi
-
 step "Claude Code settings"
 py "$REPO/lib/configure_claude.py" --repo "$REPO" --backup-dir "$BACKUPS"
 
@@ -312,15 +289,17 @@ if [ "${MOVED:-0}" = 1 ]; then
   cat <<EOF
 
 ${B}All set!${N} When Claude finishes this reply, this Terminal window closes
-and the conversation carries on in a Ghostty window. From now on, click
-${B}Ghostty${N} in the Dock to start Claude; Cmd-N opens another window.
+and the conversation carries on in a Ghostty window. From now on, open
+${B}Ghostty${N} to start Claude; Cmd-N opens another window. To keep it in your Dock,
+right-click its icon there and choose Options > Keep in Dock.
 EOF
 else
   cat <<EOF
 
 ${B}All set!${N}
-Click ${B}Ghostty${N} in your Dock (the ghost icon). Each window is its own chat
-with Claude; press ${B}Cmd-N${N} for another. Close a window when you're done.
+Open ${B}Ghostty${N} from Applications. Each window is its own chat with Claude; press
+${B}Cmd-N${N} for another. Close a window when you're done. To keep it in your Dock,
+right-click its icon there and choose Options > Keep in Dock.
 EOF
   if pgrep -qx ghostty; then
     echo "(Ghostty is open right now: quit it with Cmd-Q and reopen it to pick up the new setup.)"

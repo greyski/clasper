@@ -39,8 +39,8 @@ anywhere, so if it's already somewhere else, use that copy.
 
 ## 2. Run the installer
 
-Before you run it, tell them what it does, in two lines: it adds the Ghostty
-app to the Dock, and from then on clicking Ghostty opens Claude. Also explain
+Before you run it, tell them what it does, in two lines: it installs the
+Ghostty app, and from then on opening Ghostty opens Claude. Also explain
 bypass permissions mode in plain words: Claude will act without asking each time, but will still check
 before deleting, sending, sharing or buying anything.
 
@@ -57,11 +57,12 @@ When the installer finishes, it hands this conversation over to a Ghostty
 window as soon as you finish your turn. So end your turn with something like:
 
 > All done. In a moment this conversation moves into a new Ghostty window with
-> its own color. That's where we'll work from now on. Next time, just click
-> **Ghostty in your Dock**.
+> its own color. That's where we'll work from now on. Next time, just open
+> **Ghostty**. To keep it handy, right-click its Dock icon and choose
+> **Options > Keep in Dock**.
 >
-> If no new window shows up within a minute, click **Ghostty in your Dock**
-> yourself. If your Mac asks whether to open Ghostty, click **Open**.
+> If no new window shows up within a minute, open **Ghostty** from your
+> Applications folder yourself. If your Mac asks whether to open Ghostty, click **Open**.
 
 Don't do anything after that message. A busy session can't be moved.
 
@@ -96,7 +97,7 @@ When they say "update Clasper" (or similar):
 
 When they ask to remove Clasper:
 
-1. Confirm first (AskUserQuestion): this removes the Ghostty Dock setup and
+1. Confirm first (AskUserQuestion): this removes the Ghostty setup and
    Clasper's rules; their work in `~/claude/` stays.
 2. Run `<install>/install.sh --uninstall` and relay the result.
 3. Ask (AskUserQuestion) whether to also delete the Clasper folder itself,
