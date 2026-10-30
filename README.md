@@ -1,4 +1,8 @@
-# Clasper
+<p align="center">
+  <img src="assets/icon-1024.png" width="160" alt="Clasper app icon">
+</p>
+
+<h1 align="center">Clasper</h1>
 
 A simple wrapper around [Ghostty](https://ghostty.org) and
 [Claude Code](https://claude.com/claude-code) for macOS. Open Ghostty and you're
