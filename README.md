@@ -13,7 +13,7 @@ What you get:
   icon (a nod to Claude's mascot and to Ghostty). Every window is a Claude
   session.
 - **Bypass permissions mode.** Claude runs commands and installs what it needs
-  without stopping to ask (read the warning below).
+  without stopping to ask.
 - **A color per window.** Each window gets its own tint, and Claude's mascot,
   the bypass line and the spinner are recolored to match, using Claude Code's
   `*-ansi` themes and the terminal palette. Follows Mac light/dark, or pin one.
@@ -31,21 +31,7 @@ What you get:
 - **`clasper-migrate`.** Moves Claude sessions already running in Terminal.app
   into Ghostty windows, reopening the same conversations.
 
-## Read this first: what bypass permissions mode means
-
-Claude Code normally asks before it runs a command, edits a file or uses the
-web. **This setup turns all of those prompts off.** Claude can read, change and
-delete anything your Mac account can, install software, and act in your signed-in
-Chrome (your email, your accounts) without asking first.
-
-The included rules tell Claude to confirm before anything destructive or
-outward-facing, and never to move money or place orders. Those are instructions,
-not locks: Claude usually follows them, but nothing enforces them. A web page or
-an email can also contain text written to trick it. Only use this on a Mac and
-accounts where you're comfortable with that, keep backups (Time Machine), and
-watch what it's doing when it matters.
-
-## Get started (no programming needed)
+## Get started
 
 You need a Mac and a paid Claude plan. The free plan doesn't include Claude
 Code, and controlling Mac apps (computer use) needs Pro or Max.
@@ -83,33 +69,6 @@ The installer makes this suite Ghostty's default config (it adds an include line
 to `~/.config/ghostty/config`). After that, **every Ghostty window opens
 Claude**, not a shell. If Ghostty is your everyday terminal, use another one for
 shell work, or don't install this. Ghostty itself keeps updating normally.
-
-## For programmers
-
-Prerequisites: macOS and Claude Code (signed in). No sudo or Homebrew needed:
-the installer fetches Ghostty from its official DMG and Python via uv.
-
-```sh
-mkdir -p ~/claude
-git clone https://github.com/greyski/clasper.git ~/claude/clasper
-~/claude/clasper/install.sh
-```
-
-`~/claude/clasper` is the default location, but the scripts work from
-anywhere. The installer links the rules (`claude/CLAUDE.md`), the setup skill
-and a session-start hook into `~/.claude/`, and makes the suite Ghostty's
-default config. Run it from a Claude session and it moves that session into
-Ghostty once it goes idle. [INSTALL.md](INSTALL.md) is the step-by-step Claude
-follows, including update and uninstall.
-
-Update: `git -C ~/claude/clasper pull && ~/claude/clasper/install.sh`.
-
-## Your files stay yours
-
-Everything personal lives in `local/` inside this folder (your profile and
-settings), which is ignored by git, so updating with `git pull` never touches
-it and it never ends up in a commit. Work Claude makes for you goes in
-`~/claude/`.
 
 ## Uninstall
 

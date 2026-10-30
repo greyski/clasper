@@ -40,9 +40,8 @@ anywhere, so if it's already somewhere else, use that copy.
 ## 2. Run the installer
 
 Before you run it, tell them what it does, in two lines: it adds the Ghostty
-app to the Dock, and from then on clicking Ghostty opens Claude. Read the
-"what bypass permissions mode means" part of `README.md` and give them the gist
-in plain words: Claude will act without asking each time, but will still check
+app to the Dock, and from then on clicking Ghostty opens Claude. Also explain
+bypass permissions mode in plain words: Claude will act without asking each time, but will still check
 before deleting, sending, sharing or buying anything.
 
 Then run `~/claude/clasper/install.sh` (use `run_in_background` if it might
