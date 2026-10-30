@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Move running Claude sessions from Terminal.app into Ghostty windows.
+"""Move running Claude sessions into Ghostty windows.
 
 For each Claude session running in a Terminal.app tab that is idle: stop it,
 close its tab, and reopen the same conversation (claude --resume) in a new
@@ -9,11 +9,16 @@ so no work in progress is interrupted -- rerun once they finish.
     clasper-migrate              migrate every idle Terminal session
     clasper-migrate --dry-run    just list what would move
     clasper-migrate --when-idle  run in the background, wait for the Claude
-                                session this was started from (the nearest
-                                `claude` up the process tree) to go idle, then
-                                move just that one. Used by install.sh so the
-                                conversation that ran the installer carries on
-                                in Ghostty. Log: ~/.cache/clasper/migrate.log
+                                 session this was started from (the nearest
+                                 `claude` up the process tree) to go idle, then
+                                 move just that one. Used by install.sh so the
+                                 conversation that ran the installer carries on
+                                 in Ghostty. Log: ~/.cache/clasper/migrate.log
+    clasper-migrate --consolidate
+                                 gather sessions spread over several running
+                                 copies of Ghostty (several Dock icons) into
+                                 one: the copy this is run from, else the
+                                 oldest. Idle sessions move, empty copies quit.
 """
 import json
 import os
@@ -149,7 +154,7 @@ function run(argv){
 }'''
 
 
-def running_ghostty(app):
+def ghostty_pids(app):
     exe = str(app / "Contents" / "MacOS" / "ghostty")
     out = subprocess.run(["ps", "-axo", "pid=,lstart=,command="], capture_output=True, text=True).stdout
     pids = []
@@ -157,7 +162,12 @@ def running_ghostty(app):
         parts = line.split(None, 6)
         if len(parts) == 7 and (parts[6] == exe or parts[6].startswith(exe + " ")):
             pids.append(int(parts[0]))
-    return max(pids) if pids else None   # newest-ish: highest pid
+    return sorted(pids)
+
+
+def running_ghostty(app):
+    pids = ghostty_pids(app)
+    return pids[-1] if pids else None   # newest-ish: highest pid
 
 
 def default_config_is_suite():
@@ -183,11 +193,12 @@ def write_handoff(sid, cwd):
     return path
 
 
-def open_window(sid, cwd):
-    """New Ghostty window running clasper-session, resuming conversation `sid` in `cwd`."""
+def open_window(sid, cwd, pid=None):
+    """New Ghostty window running clasper-session, resuming conversation `sid`
+    in `cwd`, in Ghostty process `pid` (default: a running one)."""
     env = {"CLASPER_HANDOFF": write_handoff(sid, cwd)}
     app = find_ghostty()
-    pid = running_ghostty(app)
+    pid = pid or running_ghostty(app)
     if pid:
         res = osascript(NEW_WINDOW_JXA, "JavaScript", str(pid), shlex.quote(str(SESSION_CMD)),
                         cwd if os.path.isdir(cwd) else str(Path.home()), *[f"{k}={v}" for k, v in env.items()])
@@ -205,20 +216,75 @@ def open_window(sid, cwd):
     subprocess.run(cmd, check=True, env=CLEAN_ENV)
 
 
-def migrate(d, tty):
-    pid, sid, cwd = d["pid"], d["sessionId"], d["cwd"]
-    # Stop the old process first so two clients never write the same transcript.
+def stop(pid):
+    """Stop a Claude process and wait for it, so two clients never write the
+    same transcript."""
     os.kill(pid, signal.SIGTERM)
     for _ in range(50):
         if not alive(pid):
-            break
+            return True
         time.sleep(0.1)
-    else:
-        print(f"  pid {pid} did not exit; leaving it alone")
+    print(f"  pid {pid} did not exit; leaving it alone")
+    return False
+
+
+def migrate(d, tty):
+    if not stop(d["pid"]):
         return False
     close_terminal_tab(tty)
-    open_window(sid, cwd)
+    open_window(d["sessionId"], d["cwd"])
     return True
+
+
+def parent(pid):
+    out = subprocess.run(["ps", "-o", "ppid=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
+    return int(out) if out else 0
+
+
+def host_ghostty(pid, ghosttys):
+    """The Ghostty process a process runs under, if any."""
+    while pid > 1:
+        if pid in ghosttys:
+            return pid
+        pid = parent(pid)
+    return None
+
+
+def consolidate(dry):
+    app = find_ghostty()
+    ghosttys = ghostty_pids(app)
+    if len(ghosttys) < 2:
+        print("Only one copy of Ghostty is running; nothing to gather.")
+        return
+    me = nearest_claude()
+    target = (me and host_ghostty(me, ghosttys)) or ghosttys[0]
+    print(f"Gathering sessions into the Ghostty copy with pid {target}.")
+    for f in sorted(REGISTRY.glob("*.json")):
+        d = read_session(int(f.stem)) if f.stem.isdigit() else None
+        if not d or d.get("kind") != "interactive" or not alive(d["pid"]):
+            continue
+        host = host_ghostty(d["pid"], ghosttys)
+        if host in (None, target):
+            continue
+        label = f"{d.get('name', d['sessionId'][:8])}  {d['cwd']}"
+        if d.get("status") != "idle":
+            print(f"skip  {label}: busy ({d.get('status')}), rerun when it's done")
+        elif dry:
+            print(f"would move  {label}")
+        else:
+            print(f"moving  {label}")
+            if stop(d["pid"]):
+                open_window(d["sessionId"], d["cwd"], pid=target)
+    if dry:
+        return
+    time.sleep(1)
+    for g in ghosttys:
+        if g != target and alive(g) and not subprocess.run(["pgrep", "-P", str(g)], capture_output=True).stdout.strip():
+            try:
+                os.kill(g, signal.SIGTERM)   # no windows left in this copy
+                print(f"quit the empty Ghostty copy {g}")
+            except ProcessLookupError:
+                pass   # it quit on its own after its last window closed
 
 
 def nearest_claude():
@@ -228,8 +294,7 @@ def nearest_claude():
         d = read_session(pid)
         if d and d.get("kind") == "interactive":
             return pid
-        out = subprocess.run(["ps", "-o", "ppid=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
-        pid = int(out) if out else 0
+        pid = parent(pid)
     return None
 
 
@@ -242,8 +307,8 @@ def when_idle():
         sys.exit("That Claude session isn't running in Terminal.app; nothing to move.")
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG, "a") as log:
-        # A new session (setsid) so the watcher outlives the Bash tool call and
-        # the Terminal tab that started it; output goes to the log.
+        # A new session (setsid) so the watcher outlives the command and the
+        # Terminal tab that started it; output goes to the log.
         subprocess.Popen([sys.executable, __file__, "--watch", str(pid)], stdin=subprocess.DEVNULL,
                          stdout=log, stderr=log, start_new_session=True, env=CLEAN_ENV, cwd="/")
     print(f"When this Claude session (pid {pid}) is idle, it will move into a Ghostty window.")
@@ -280,6 +345,8 @@ def main():
     if "--when-idle" in sys.argv:
         return when_idle()
     dry = "--dry-run" in sys.argv
+    if "--consolidate" in sys.argv:
+        return consolidate(dry)
     found = list(sessions())
     if not found:
         print("No Claude sessions running in Terminal.app.")

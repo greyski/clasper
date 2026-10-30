@@ -23,3 +23,6 @@ window-padding-y = 8
 
 # Dock icon.
 @ICON@
+
+# No progress bar across the top of the window (its colour can't follow the tint).
+progress-style = false

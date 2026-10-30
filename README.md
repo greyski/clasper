@@ -121,6 +121,15 @@ This removes the Dock icon, the Ghostty include line and the links in
 `~/.claude/`. Your `local/` folder and `~/claude/` are left alone; delete them
 yourself if you want them gone.
 
+## Related
+
+- [lotnikov/claude-terminal-tint](https://github.com/lotnikov/claude-terminal-tint):
+  a Claude Code plugin that gives each concurrent session its own background
+  tint.
+- [ignaciojimenez/agent-sessions](https://github.com/ignaciojimenez/agent-sessions):
+  records Claude Code sessions and reopens them as Ghostty windows, tabs and
+  splits.
+
 ---
 
 Not affiliated with or endorsed by Anthropic. Claude and Claude Code are

@@ -83,7 +83,7 @@ def read_json(path):
     return data
 
 
-# --- ~/.claude.json -------------------------------------------------------
+# --- ~/.claude.json ------------------------------------------------------
 
 def claude_json(run, install):
     if not install:
@@ -160,7 +160,7 @@ def settings(run, install, hook_path):
         print(f"  {SETTINGS}: {'already set' if install else 'nothing of ours'}")
 
 
-# --- ~/.claude/CLAUDE.md --------------------------------------------------
+# --- ~/.claude/CLAUDE.md -------------------------------------------------
 
 def memory(run, install, import_target):
     line = f"@{import_target}"
@@ -187,7 +187,7 @@ def memory(run, install, import_target):
         run.write_text(MEMORY, "\n".join(kept) + "\n" if kept else "")
 
 
-# --- ~/.claude/skills/clasper-setup -----------------------------------------
+# --- ~/.claude/skills/clasper-setup --------------------------------------
 
 def skill(run, install, target):
     link = SKILL_LINK

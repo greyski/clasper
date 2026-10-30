@@ -1,6 +1,8 @@
 #!/bin/zsh -l
-# clasper: one Claude session per Ghostty window. Tints the window, then
-# replaces itself with Claude in bypass mode.
+# clasper-session: one Claude session per Ghostty window. Ghostty runs this as
+# its `command` (see templates/ghostty.config.in); it tints the window, then
+# execs Claude in bypass mode. Settings come from local/settings.env, and any
+# extra arguments are passed through to claude.
 #
 # Claude's *-ansi themes draw their UI from the terminal palette, so recolouring
 # a few palette slots per window recolours the mascot, the bypass line, the
@@ -53,11 +55,13 @@ if [[ $appearance == dark ]]; then
   bg=$(hsl $hue $(( 0.45 * sat )) 0.12) fg=$(hsl $hue $(( 0.15 * sat )) 0.88)
   accent=$(hsl $hue 0.70 0.72) spin=$(hsl $hue 0.60 0.82) code=$(hsl $hue 0.45 0.84)
   osc "4;9;#$accent"; osc "4;11;#$spin"; osc "4;12;#$code"     # mascot+bypass, spinner text, inline code
+  osc "4;10;#$spin"                                              # status labels like /rc
 else
   theme=light-ansi
   bg=$(hsl $hue $(( 0.45 * sat )) 0.94) fg=$(hsl $hue $(( 0.30 * sat )) 0.15)
   accent=$(hsl $hue 0.65 0.40) spin=$(hsl $hue 0.60 0.45) code=$(hsl $hue 0.50 0.32)
   osc "4;1;#$accent"; osc "4;9;#$accent"; osc "4;11;#$spin"; osc "4;4;#$code"  # bypass, mascot+spinner, inline code
+  osc "4;2;#$spin"; osc "4;3;#$spin"                                           # status labels like /rc
 fi
 osc "11;#$bg"; osc "10;#$fg"; osc "12;#$accent"   # background, text, cursor
 printf '\e]2;Claude · %s\a' $name                 # window title
@@ -68,10 +72,9 @@ unset CLAUDECODE CLAUDE_PID CLAUDE_EFFORT CLAUDE_CODE_ENTRYPOINT CLAUDE_CODE_EXE
   CLAUDE_CODE_SESSION_ID CLAUDE_CODE_CHILD_SESSION CLAUDE_CODE_SESSION_ATTENDED \
   CLAUDE_CODE_MESSAGING_SOCKET CLAUDE_CODE_MESSAGING_TOKEN CLAUDE_CODE_BRIDGE_SESSION_ID
 
-# Work out of ~/claude: it's trusted once, so new windows don't ask about the
-# folder, and projects live there.
+# ~/claude is pre-trusted by install.sh, so starting there skips the folder prompt.
 [[ -d "$HOME/claude" ]] && cd "$HOME/claude"
-args=(--settings "{\"theme\":\"$theme\"}")
+args=(--settings "{\"theme\":\"$theme\",\"terminalProgressBarEnabled\":false}")
 (( CLASPER_CHROME )) && args+=(--chrome)
 
 # clasper-migrate hands over a conversation through a one-shot file (line 1:

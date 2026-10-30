@@ -8,7 +8,7 @@
 #   clasper.sh set KEY VALUE      set CLASPER_COLORS / CLASPER_APPEARANCE / CLASPER_CHROME
 #   clasper.sh chrome             report whether Chrome and the Claude extension are installed
 #   clasper.sh pane NAME          open a Privacy & Security pane:
-#                              files | accessibility | screen | automation
+#                                 files | accessibility | screen | automation
 #   clasper.sh fda                report whether Full Disk Access is in effect
 #
 # bash 3.2 compatible (the macOS system bash).

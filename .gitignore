@@ -1,10 +1,10 @@
 # Personal, per-machine files never go in the repo
 local/
 build/
-# early hand-made prototype (hard-coded paths)
+# local-only working folders
 ghostty/
 launcher/
 .DS_Store
 __pycache__/
-# compat link for pre-rename Ghostty windows (remove after testing)
+# local-only symlink
 bin/claude-session

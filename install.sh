@@ -24,7 +24,7 @@ BACKUPS="$HOME/.claude/backups/clasper-$(date +%Y%m%d-%H%M%S)"
 SETUP_URL="https://code.claude.com/docs/en/setup"
 GHOSTTY_TEAM="24VZTF6M5V"   # Mitchell Hashimoto's Apple Developer ID
 GHOSTTY_FALLBACK_DMG="https://release.files.ghostty.org/1.4.0/Ghostty.dmg"
-# Where Ghostty may live. CLASPER_APPS_DIR (for testing) replaces the list.
+# Where Ghostty may live. If set, CLASPER_APPS_DIR replaces this list.
 if [ -n "${CLASPER_APPS_DIR:-}" ]; then APP_DIRS="$CLASPER_APPS_DIR"; else APP_DIRS="/Applications $HOME/Applications"; fi
 
 DOCK=1
