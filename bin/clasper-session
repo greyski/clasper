@@ -32,7 +32,9 @@ hsl() {  # hsl H S L (S, L in 0-1) -> RRGGBB
 recent_file=${XDG_CACHE_HOME:-$HOME/.cache}/clasper/recent
 mkdir -p ${recent_file:h}
 recent=(${(f)"$(cat $recent_file 2>/dev/null)"})
-if [[ $CLASPER_COLORS != random && -n ${(M)tints:#$CLASPER_COLORS:*} ]]; then
+if [[ -n $CLASPER_TINT && -n ${(M)tints:#$CLASPER_TINT:*} ]]; then
+  pick=${(M)tints:#$CLASPER_TINT:*}      # restarting: keep this window's tint
+elif [[ $CLASPER_COLORS != random && -n ${(M)tints:#$CLASPER_COLORS:*} ]]; then
   pick=${(M)tints:#$CLASPER_COLORS:*}
 else
   pool=()
@@ -41,7 +43,8 @@ else
   pick=${pool[$(( RANDOM % ${#pool} + 1 ))]}
 fi
 name=${pick%%:*} hue=${pick##*:}
-print -l $name ${recent[1,5]} > $recent_file
+[[ -n $CLASPER_TINT ]] || print -l $name ${recent[1,5]} > $recent_file
+unset CLASPER_TINT
 
 appearance=$CLASPER_APPEARANCE
 if [[ $appearance == auto ]]; then
@@ -55,7 +58,7 @@ if [[ $appearance == dark ]]; then
   bg=$(hsl $hue $(( 0.45 * sat )) 0.12) fg=$(hsl $hue $(( 0.15 * sat )) 0.88)
   accent=$(hsl $hue 0.70 0.72) spin=$(hsl $hue 0.60 0.82) code=$(hsl $hue 0.45 0.84)
   osc "4;9;#$accent"; osc "4;11;#$spin"; osc "4;12;#$code"     # mascot+bypass, spinner text, inline code
-  osc "4;10;#$spin"                                              # status labels like /rc
+  osc "4;2;#$spin"; osc "4;10;#$spin"                           # status bullets, /rc
 else
   theme=light-ansi
   bg=$(hsl $hue $(( 0.45 * sat )) 0.94) fg=$(hsl $hue $(( 0.30 * sat )) 0.15)
@@ -84,9 +87,24 @@ args=(--settings "{\"theme\":\"$theme\",\"terminalProgressBarEnabled\":false}")
 if [[ -n "$CLASPER_HANDOFF" && -f "$CLASPER_HANDOFF" ]] && mv "$CLASPER_HANDOFF" "$CLASPER_HANDOFF.claimed.$$" 2>/dev/null; then
   handoff=(${(f)"$(<$CLASPER_HANDOFF.claimed.$$)"})
   rm -f "$CLASPER_HANDOFF.claimed.$$"
-  [[ -n ${handoff[1]} ]] && args+=(--resume ${handoff[1]})
+  [[ -n ${handoff[1]} && ${handoff[1]} != new ]] && args+=(--resume ${handoff[1]})
   [[ -d ${handoff[2]} ]] && cd ${handoff[2]}
 fi
 unset CLASPER_HANDOFF
 
-exec claude --dangerously-skip-permissions "${args[@]}" "$@"
+# Run Claude as a child rather than exec'ing it, so that after a Cmd-R
+# (clasper-restart) this script can start over and resume the conversation.
+# Ctrl-C reaches this script too; a no-op trap keeps it alive without changing
+# how Claude itself handles the signal.
+export CLASPER_WINDOW=$$ PATH=$SUITE/bin:$PATH
+trap : INT QUIT
+claude --dangerously-skip-permissions "${args[@]}" "$@"
+code=$?
+
+restart=${XDG_CACHE_HOME:-$HOME/.cache}/clasper/restart/$$
+if [[ -f $restart ]]; then
+  export CLASPER_HANDOFF=$restart.handoff CLASPER_TINT=$name
+  mv $restart $CLASPER_HANDOFF
+  exec $0 "$@"
+fi
+exit $code

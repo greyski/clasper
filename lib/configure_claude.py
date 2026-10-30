@@ -9,8 +9,10 @@ Install makes these changes, each one a merge (other content is kept):
   ~/.claude/settings.json   no bypass-mode warning; SessionStart hook -> the suite's hook
   ~/.claude/CLAUDE.md       one @import line for the suite's CLAUDE.md
   ~/.claude/skills/clasper-setup  symlink to the suite's onboarding skill
+  ~/.claude/commands/clasper-restart.md  symlink to the /clasper-restart command
+  ~/.claude/keybindings.json  Cmd-R in the chat runs /clasper-restart
 
-Uninstall removes the hook, the import line and the symlink. It leaves the
+Uninstall removes the hook, the import line, the symlinks and the Cmd-R binding. It leaves the
 ~/.claude.json trust/Chrome flags and the bypass-warning flag alone, since
 those are ordinary Claude settings the user may want anyway.
 
@@ -33,6 +35,9 @@ CLAUDE_DIR = HOME / ".claude"
 SETTINGS = CLAUDE_DIR / "settings.json"
 MEMORY = CLAUDE_DIR / "CLAUDE.md"
 SKILL_LINK = CLAUDE_DIR / "skills" / "clasper-setup"
+COMMAND_LINK = CLAUDE_DIR / "commands" / "clasper-restart.md"
+KEYBINDINGS = CLAUDE_DIR / "keybindings.json"
+RESTART_KEY, RESTART_ACTION = "cmd+r", "command:clasper-restart"
 IMPORT_COMMENT = "<!-- clasper: loads the suite's instructions (added by install.sh; removed by install.sh --uninstall) -->"
 
 
@@ -189,8 +194,7 @@ def memory(run, install, import_target):
 
 # --- ~/.claude/skills/clasper-setup --------------------------------------
 
-def skill(run, install, target):
-    link = SKILL_LINK
+def link(run, install, link, target):
     if install:
         if link.is_symlink():
             if os.readlink(link) == str(target):
@@ -203,7 +207,7 @@ def skill(run, install, target):
                 link.symlink_to(target)
             return
         if link.exists():
-            print(f"  {link}: a real folder is already there; leaving it alone")
+            print(f"  {link}: something else is already there; leaving it alone")
             return
         if not target.exists():
             print(f"  note: {target} doesn't exist yet; the link will work once it does")
@@ -222,6 +226,43 @@ def skill(run, install, target):
             print(f"  {link}: nothing of ours")
 
 
+def keybindings(run, install):
+    """Cmd-R in the chat runs /clasper-restart. Ghostty passes Cmd keys through
+    to Claude Code, which reads them via the kitty keyboard protocol."""
+    data = read_json(KEYBINDINGS) if KEYBINDINGS.exists() else None
+    if data is None:
+        if not install:
+            print(f"  {KEYBINDINGS}: nothing of ours")
+            return
+        data = {"$schema": "https://www.schemastore.org/claude-code-keybindings.json",
+                "$docs": "https://code.claude.com/docs/en/keybindings", "bindings": []}
+    blocks = data.setdefault("bindings", [])
+    chat = next((b for b in blocks if b.get("context") == "Chat"), None)
+    current = (chat or {}).get("bindings", {}).get(RESTART_KEY)
+    if install:
+        if current == RESTART_ACTION:
+            print(f"  {KEYBINDINGS}: Cmd-R already restarts")
+            return
+        if current is not None:
+            print(f"  {KEYBINDINGS}: Cmd-R is already bound to {current!r}; leaving it alone")
+            return
+        if chat is None:
+            chat = {"context": "Chat", "bindings": {}}
+            blocks.append(chat)
+        chat.setdefault("bindings", {})[RESTART_KEY] = RESTART_ACTION
+        run.say(f"{KEYBINDINGS}: Cmd-R restarts the session")
+    else:
+        if current != RESTART_ACTION:
+            print(f"  {KEYBINDINGS}: nothing of ours")
+            return
+        del chat["bindings"][RESTART_KEY]
+        if not chat["bindings"]:
+            blocks.remove(chat)
+        run.say(f"{KEYBINDINGS}: remove the Cmd-R binding")
+    run.changed = True
+    run.write_json(KEYBINDINGS, data)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--repo", required=True, help="the clasper folder")
@@ -236,7 +277,9 @@ def main():
     claude_json(run, install)
     settings(run, install, repo / "claude" / "hooks" / "session-start.sh")
     memory(run, install, repo / "claude" / "CLAUDE.md")
-    skill(run, install, repo / "claude" / "skills" / "clasper-setup")
+    link(run, install, SKILL_LINK, repo / "claude" / "skills" / "clasper-setup")
+    link(run, install, COMMAND_LINK, repo / "claude" / "commands" / "clasper-restart.md")
+    keybindings(run, install)
 
     if run.changed and not run.dry and run.backup_dir.exists() and not a.backup_dir:
         print(f"  backups of the old files: {run.backup_dir}")

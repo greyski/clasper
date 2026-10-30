@@ -1,0 +1,31 @@
+#!/bin/zsh
+# Restart the Claude session in this Clasper window, keeping the conversation.
+#
+# Ghostty's Cmd-R types `!clasper-restart` into Claude, which runs this as a
+# shell command from inside the session. It leaves a note for the window's
+# clasper-session (which started Claude and is waiting for it to exit) saying
+# which conversation to reopen and where, then stops Claude. clasper-session
+# then starts itself again from the top, so changes to the session script,
+# settings, rules, skills or Claude Code itself all take effect, and resumes the
+# same conversation in the same tint.
+
+if [[ -z $CLASPER_WINDOW || -z $CLAUDE_PID || -z $CLAUDE_CODE_SESSION_ID ]]; then
+  print "clasper-restart only works inside a Clasper window's Claude session." >&2
+  exit 1
+fi
+
+# Resume from the folder the session started in: --resume only finds
+# conversations that belong to the current folder.
+registry=$HOME/.claude/sessions/$CLAUDE_PID.json
+cwd=$(sed -n 's/.*"cwd":"\([^"]*\)".*/\1/p' $registry 2>/dev/null)
+
+dir=${XDG_CACHE_HOME:-$HOME/.cache}/clasper/restart
+mkdir -p $dir
+# A conversation with no messages yet has no transcript and can't be resumed;
+# "new" tells clasper-session to start a fresh one instead.
+sid=$CLAUDE_CODE_SESSION_ID
+[[ -n $(print -l $HOME/.claude/projects/*/$sid.jsonl(N)) ]] || sid=new
+print -l -- $sid ${cwd:-$PWD} > $dir/$CLASPER_WINDOW
+
+print "Restarting Claude; this conversation will reopen in a moment."
+kill -TERM $CLAUDE_PID
