@@ -85,13 +85,10 @@ ghostty_user_config() {
   echo "$GHOSTTY_DIR/config.ghostty"
 }
 
-strip_block() {  # print file $1 without our marked block
+strip_block() {
   awk -v b="$MARK_BEGIN" -v e="$MARK_END" '$0==b{skip=1;next} skip&&$0==e{skip=0;next} !skip' "$1"
 }
 
-# A python3 that is really there. On a fresh Mac /usr/bin/python3 is a stub
-# that pops up a "install developer tools" dialog, so it only counts when the
-# Command Line Tools are installed.
 PYBIN=""
 find_python() {
   local p
@@ -102,7 +99,7 @@ find_python() {
   done
   return 1
 }
-py() {  # run a python script with the real python3, else uv's own Python
+py() {
   if [ -n "$PYBIN" ]; then "$PYBIN" "$@"
   else uv run -q --no-project --python-preference only-managed --python 3.12 python "$@"; fi
 }
