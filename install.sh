@@ -224,7 +224,7 @@ if [ ! -f "$LOCAL/settings.env" ]; then
 # Clasper personal settings (this file stays on this Mac).
 # Remove the leading "# " from a line to change a setting.
 
-# Window colour: random (a different tint per window), or one of
+# Window color: random (a different tint per window), or one of
 # indigo teal plum rust forest wine navy olive violet ocean amber graphite
 # CLASPER_COLORS=random
 
@@ -234,7 +234,7 @@ if [ ! -f "$LOCAL/settings.env" ]; then
 # Let Claude use Chrome (1 = yes, 0 = no)
 # CLASPER_CHROME=1
 EOF
-  ok "created $LOCAL/settings.env (window colour and other preferences)"
+  ok "created $LOCAL/settings.env (window color and other preferences)"
 fi
 
 step "Ghostty settings"

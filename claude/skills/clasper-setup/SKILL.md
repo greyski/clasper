@@ -1,6 +1,6 @@
 ---
 name: clasper-setup
-description: First-run setup and settings for clasper. Asks the person's name, what they'll use Claude for and how chatty to be; sets window colours and light/dark; connects Claude in Chrome; walks through the Mac permissions for files and computer control. Use on first launch (the session-start note says the person isn't set up), when they say "setup", "set me up", "change my settings", "change the colours", or when the Chrome or computer-use tools aren't connected.
+description: First-run setup and settings for clasper. Asks the person's name, what they'll use Claude for and how chatty to be; sets window colors and light/dark; connects Claude in Chrome; walks through the Mac permissions for files and computer control. Use on first launch (the session-start note says the person isn't set up), when they say "setup", "set me up", "change my settings", "change the colors", or when the Chrome or computer-use tools aren't connected.
 ---
 
 # clasper-setup
@@ -9,7 +9,7 @@ Set this person up, or change their settings. They are probably not technical:
 friendly, plain words, one step at a time, no jargon, never show them a command.
 
 Every question goes through the **AskUserQuestion** tool: batch related
-questions (up to 4 per call), recommended option first and labelled
+questions (up to 4 per call), recommended option first and labeled
 "(Recommended)". Don't ask in prose.
 
 The helper script does the fiddly parts. Run it with Bash:
@@ -25,7 +25,7 @@ shows the same thing). The profile is `<suite>/local/profile.md`.
 - **No profile:** first run. Say hello in one short line ("Let's get you set
   up. A few quick questions.") and do every step below in order.
 - **Profile exists:** show a short plain summary of their current settings (name,
-  uses, style, colours, light/dark, Chrome on/off), then ask what to change
+  uses, style, colors, light/dark, Chrome on/off), then ask what to change
   (multiSelect): About me / Window look / Chrome / Mac permissions / Nothing.
   Do only the chosen steps, then step 5.
 
@@ -36,26 +36,26 @@ One AskUserQuestion call with three questions:
   (`id -F` prints the Mac account's full name; offer the first name), they can
   type their own with "Other".
 - **What will you mostly use this for?** multiSelect: Email & web errands /
-  Writing / Organising files & photos / Research. ("Coding" and anything else
+  Writing / Organizing files & photos / Research. ("Coding" and anything else
   they can add via Other; if they pick nothing, treat it as general help.)
 - **How much detail do you like?** Brief (Recommended) / Detailed.
 
 ## 2. Window look
 
-Each window gets its own colour, and Claude's little mascot, the bypass line
+Each window gets its own color, and Claude's little mascot, the bypass line
 and the spinner change to match.
 
 One call:
-- **Window colours:** A different colour for each window (Recommended) / Always
-  the same colour.
+- **Window colors:** A different color for each window (Recommended) / Always
+  the same color.
 - **Light or dark:** Match my Mac (Recommended) / Always dark / Always light.
 
-If they chose the same colour, ask a follow-up. Get the names from `clasper.sh
+If they chose the same color, ask a follow-up. Get the names from `clasper.sh
 tints` (don't hard-code them). The tool allows at most 4 options per question,
-so ask for a family first, then the colour:
+so ask for a family first, then the color:
 - Blues: navy, ocean, indigo, teal
 - Earth: forest, olive, amber, rust
-- Berry & grey: plum, violet, wine, graphite
+- Berry & gray: plum, violet, wine, graphite
 
 (If `tints` lists names not in these groups, fit them in sensibly.)
 
@@ -87,7 +87,7 @@ Ask: **Do you use Google Chrome?** Yes (Recommended) / No.
      was only just installed, Chrome needs a restart: ask before quitting
      Chrome (they may have unsaved work), then `osascript -e 'quit app "Google
      Chrome"'` and `open -a "Google Chrome"`;
-   - check they signed in to the same Claude account and organisation.
+   - check they signed in to the same Claude account and organization.
    Note: Claude in Chrome needs a paid Claude plan (Pro, Max, Team or Enterprise).
 
 ## 4. Save what you have so far

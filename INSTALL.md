@@ -58,7 +58,7 @@ When the installer finishes, it hands this conversation over to a Ghostty
 window as soon as you finish your turn. So end your turn with something like:
 
 > All done. In a moment this conversation moves into a new Ghostty window with
-> its own colour. That's where we'll work from now on. Next time, just click
+> its own color. That's where we'll work from now on. Next time, just click
 > **Ghostty in your Dock**.
 >
 > If no new window shows up within a minute, click **Ghostty in your Dock**
@@ -70,7 +70,7 @@ Don't do anything after that message. A busy session can't be moved.
 
 The new window starts Claude with the suite's rules. Its session-start note says
 the person hasn't been set up yet, so the `clasper-setup` skill runs first: name,
-what they'll use it for, window colours, Chrome, and the Mac permissions. That
+what they'll use it for, window colors, Chrome, and the Mac permissions. That
 skill has its own instructions; nothing more is needed from this file.
 
 ## Update

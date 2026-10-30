@@ -14,8 +14,8 @@ What you get:
   session.
 - **Bypass permissions mode.** Claude runs commands and installs what it needs
   without stopping to ask (read the warning below).
-- **A colour per window.** Each window gets its own tint, and Claude's mascot,
-  the bypass line and the spinner are recoloured to match, using Claude Code's
+- **A color per window.** Each window gets its own tint, and Claude's mascot,
+  the bypass line and the spinner are recolored to match, using Claude Code's
   `*-ansi` themes and the terminal palette. Follows Mac light/dark, or pin one.
 - **Chrome and computer use, set up.** Claude in Chrome for websites (Gmail,
   shopping, forms) and computer use for native apps, with the Mac permissions
@@ -67,7 +67,7 @@ Code, and controlling Mac apps (computer use) needs Pro or Max.
 
 4. **That's it.** Claude downloads everything, sets it up, and moves your
    conversation into a new Ghostty window. It then asks you a few questions
-   (your name, colours, Chrome) and walks you through the Mac permissions.
+   (your name, colors, Chrome) and walks you through the Mac permissions.
    If your Mac asks whether to open Ghostty, click **Open**. From then on,
    click **Ghostty in your Dock** to start, and type `/resume` to reopen an
    earlier conversation.

@@ -4,8 +4,8 @@
 # execs Claude in bypass mode. Settings come from local/settings.env, and any
 # extra arguments are passed through to claude.
 #
-# Claude's *-ansi themes draw their UI from the terminal palette, so recolouring
-# a few palette slots per window recolours the mascot, the bypass line, the
+# Claude's *-ansi themes draw their UI from the terminal palette, so recoloring
+# a few palette slots per window recolors the mascot, the bypass line, the
 # spinner and inline code to match the window. Slots that carry meaning in the
 # dark theme (errors, diffs, code syntax) are left alone.
 
@@ -47,7 +47,7 @@ appearance=$CLASPER_APPEARANCE
 if [[ $appearance == auto ]]; then
   [[ $(defaults read -g AppleInterfaceStyle 2>/dev/null) == Dark ]] && appearance=dark || appearance=light
 fi
-sat=1; [[ $name == graphite ]] && sat=0   # graphite: grey window, orange accent
+sat=1; [[ $name == graphite ]] && sat=0   # graphite: gray window, orange accent
 
 osc() { printf '\e]%s\a' "$1"; }
 if [[ $appearance == dark ]]; then
