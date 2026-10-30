@@ -2,7 +2,7 @@
 """Generate the clasper app icon (icon-1024.png + AppIcon.icns).
 
 A white pixel-art arcade-style ghost (a nod to Ghostty) on a black
-squircle tile. The tall rectangular eye gaps and one-pixel side "arms"
+squircle tile. The tall rectangular eye gaps and chunky 2x2 side arms
 borrow from the Claude Code startup mascot. The pixel grid below is our
 own drawing.
 
@@ -19,20 +19,20 @@ from PIL import Image, ImageDraw, ImageFilter
 HERE = Path(__file__).resolve().parent
 
 GHOST = [
-    ".....######.....",
-    "...##########...",
-    "..############..",
-    ".##############.",
-    ".##############.",
-    ".###..####..###.",  # eye gaps: tall 2x3 rectangles, like the mascot's
-    ".###..####..###.",
-    ".###..####..###.",
-    "################",  # one-pixel arm nubs
-    ".##############.",
-    ".##############.",
-    ".##############.",
-    ".##.###..###.##.",  # wavy 4-point skirt
-    ".#...##..##...#.",
+    "......######......",
+    "....##########....",
+    "...############...",
+    "..##############..",
+    "..##############..",
+    "..###..####..###..",  # eye gaps: tall 2x3 rectangles, like the mascot's
+    "..###..####..###..",
+    "..###..####..###..",
+    "##################",  # 2x2 arms
+    "##################",
+    "..##############..",
+    "..##############..",
+    "..##.###..###.##..",  # wavy 4-point skirt
+    "..#...##..##...#..",
 ]
 
 SIZE = 1024
@@ -41,7 +41,7 @@ N = 5.0            # superellipse exponent for the squircle
 TOP = (0x0D, 0x0D, 0x0D)
 BOTTOM = (0x00, 0x00, 0x00)
 WHITE = (0xF5, 0xF5, 0xF5, 255)
-PX = 30            # ghost pixel size (16 cols -> 480px, ~58% of tile)
+PX = 30            # ghost pixel size (18 cols -> 540px, ~66% of tile)
 LIFT = 10          # optical centring: nudge the ghost up a hair
 SS = 4             # supersampling for smooth tile edges
 
@@ -61,7 +61,7 @@ def squircle_mask(size, cx, cy, half, n, offset=(0, 0)):
 
 
 def grid():
-    rows = [r.ljust(16, ".")[:16] for r in GHOST]
+    rows = [r.ljust(18, ".")[:18] for r in GHOST]
     return [[ch == "#" for ch in r] for r in rows]
 
 
