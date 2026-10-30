@@ -45,7 +45,7 @@ note() { printf '  %s!%s %s\n' "$Y" "$N" "$1"; }
 die()  { printf '\n%sSomething went wrong:%s %s\n' "$R" "$N" "$1" >&2; exit 1; }
 trap 'die "the step above failed (line $LINENO). Running ./install.sh again is safe and picks up where it stopped."' ERR
 
-backup() {  # copy a file under $HOME into this run's backup folder
+backup() {
   [ -f "$1" ] || return 0
   local rel="${1#$HOME/}"
   mkdir -p "$BACKUPS/$(dirname "$rel")"

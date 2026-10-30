@@ -42,7 +42,7 @@ TOP = (0x0D, 0x0D, 0x0D)
 BOTTOM = (0x00, 0x00, 0x00)
 WHITE = (0xF5, 0xF5, 0xF5, 255)
 PX = 30            # ghost pixel size (18 cols -> 540px, ~66% of tile)
-LIFT = 10          # optical centring: nudge the ghost up a hair
+LIFT = 10          # optical centering: nudge the ghost up a hair
 SS = 4             # supersampling for smooth tile edges
 
 
@@ -70,7 +70,6 @@ def build():
     half = TILE / 2
     canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
 
-    # soft drop shadow
     shadow = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     shadow.putalpha(squircle_mask(SIZE, c, c, half, N, (0, 12)).point(lambda a: a * 0.5))
     canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(16)))

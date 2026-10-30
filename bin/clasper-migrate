@@ -38,7 +38,7 @@ CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "claspe
 LOG = CACHE / "migrate.log"
 HANDOFF_DIR = CACHE / "handoff"
 IDLE_FOR = 4          # seconds the session must stay idle before we move it
-WAIT_LIMIT = 30 * 60  # give up after this long
+WAIT_LIMIT = 30 * 60
 
 # Nothing launched from here should look like it runs inside a Claude session
 # (CLAUDE_CODE_CHILD_SESSION, for one, turns off transcript saving).
@@ -242,7 +242,6 @@ def parent(pid):
 
 
 def host_ghostty(pid, ghosttys):
-    """The Ghostty process a process runs under, if any."""
     while pid > 1:
         if pid in ghosttys:
             return pid

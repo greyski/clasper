@@ -192,8 +192,6 @@ def memory(run, install, import_target):
         run.write_text(MEMORY, "\n".join(kept) + "\n" if kept else "")
 
 
-# --- ~/.claude/skills/clasper-setup --------------------------------------
-
 def link(run, install, link, target):
     if install:
         if link.is_symlink():
