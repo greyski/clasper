@@ -26,20 +26,15 @@ Code, and controlling Mac apps (computer use) needs Pro or Max.
    curl -fsSL https://claude.ai/install.sh | bash
    ```
 
-2. **Start Claude.** Quit Terminal and open it again, type `claude` and press
-   Return. Follow the steps to sign in with your Claude account in the browser.
-3. **Paste this sentence** into Claude and press Return:
+2. **Start Claude.** Type `claude` and press Return. Follow the steps to sign in
+   with your Claude account in the browser.
+4. **Paste this sentence** into Claude and press Return:
 
    ```text
    Please set up Clasper for me by following INSTALL.md in https://github.com/greyski/clasper
    ```
 
-4. **That's it.** Claude downloads everything, sets it up, and moves your
-   conversation into a new Ghostty window. It then asks you a few questions
-   (your name, colors, Chrome) and walks you through the Mac permissions.
-   If your Mac asks whether to open Ghostty, click **Open**. From then on,
-   open **Ghostty** to start, and type `/resume` to reopen an
-   earlier conversation.
+5. **That's it.**
 
 Later, say **"update Clasper"** or **"uninstall Clasper"** and Claude
 handles it. Say **"change my settings"** to redo the setup questions.
